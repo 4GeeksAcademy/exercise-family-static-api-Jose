@@ -2,28 +2,23 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
-from flask import Flask, request, jsonify, url_for
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from datastructures import FamilyStructure
-# from models import Person
 
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 CORS(app)
 
-# Create the jackson family object
 jackson_family = FamilyStructure("Jackson")
 
-
-# Handle/serialize errors like a JSON object
 @app.errorhandler(APIException)
 def handle_invalid_usage(error):
     return jsonify(error.to_dict()), error.status_code
 
 
-# Generate sitemap with all your endpoints
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
@@ -49,8 +44,7 @@ def add_member():
     if body is None:
         raise APIException("Request body must be JSON", status_code=400)
 
-    required_fields = ["first_name", "age", "lucky_numbers"]
-    if any(field not in body for field in required_fields):
+    if not all(field in body for field in ("first_name", "age", "lucky_numbers")):
         raise APIException("Missing required member fields", status_code=400)
 
     member = jackson_family.add_member(body)
@@ -65,8 +59,6 @@ def delete_member(member_id):
     return jsonify({"done": True}), 200
 
 
-
-# This only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=PORT, debug=True)
